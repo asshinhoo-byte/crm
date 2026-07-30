@@ -3,18 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solo CRM - 통화 및 문자 이력 통합 버전</title>
+  <title>Solo CRM - 구글 시트 공유 DB 연동</title>
   <style>
     :root {
       --primary: #2563eb;
-      --primary-dark: #1d4ed8;
       --bg: #f8fafc;
       --card: #ffffff;
       --text: #0f172a;
       --subtext: #64748b;
       --border: #e2e8f0;
-      --success: #16a34a;
-      --warning: #d97706;
       --call-color: #16a34a;
       --sms-color: #0284c7;
     }
@@ -36,6 +33,7 @@
       margin-bottom: 12px;
     }
     .header h1 { font-size: 1.25rem; font-weight: 700; }
+    .header p { font-size: 0.8rem; opacity: 0.9; margin-top: 4px; }
     .card {
       background: var(--card);
       border-radius: 12px;
@@ -43,12 +41,7 @@
       margin-bottom: 12px;
       border: 1px solid var(--border);
     }
-    .card-title {
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 12px;
-      color: #1e293b;
-    }
+    .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #1e293b; }
     .form-group { margin-bottom: 12px; }
     label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--subtext); margin-bottom: 4px; }
     input, select, textarea {
@@ -73,51 +66,23 @@
     .btn-sms { background-color: var(--sms-color); }
     .btn-group { display: flex; gap: 8px; }
     .btn-group .btn { flex: 1; }
-    
-    /* 탭 헤더 스타일 */
-    .tab-header {
-      display: flex;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 12px;
-    }
+    .tab-header { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
     .tab-btn {
-      flex: 1;
-      padding: 10px;
-      background: none;
-      border: none;
-      font-weight: 600;
-      color: var(--subtext);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
+      flex: 1; padding: 10px; background: none; border: none; font-weight: 600;
+      color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
     }
-    .tab-btn.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
-    .history-item {
-      background: #f8fafc;
-      border-left: 4px solid var(--primary);
-      border-radius: 6px;
-      padding: 10px;
-      margin-top: 8px;
-    }
-    .history-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.8rem;
-      color: var(--subtext);
-      margin-bottom: 4px;
-    }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .history-item { background: #f8fafc; border-left: 4px solid var(--primary); border-radius: 6px; padding: 10px; margin-top: 8px; }
+    .history-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--subtext); margin-bottom: 4px; }
+    .loading { display: none; text-align: center; color: var(--primary); font-size: 0.85rem; font-weight: 600; padding: 8px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Solo CRM</h1>
-    <p>고객 통화 및 문자 이력 관리</p>
+    <h1>Solo CRM (공유 DB)</h1>
+    <p>구글 스프레드시트 실시간 동기화</p>
   </div>
 
-  <!-- 고객 검색 -->
   <div class="card">
     <div class="card-title">고객 전화번호 검색</div>
     <div class="form-group">
@@ -126,9 +91,9 @@
     <button class="btn" onclick="searchCustomer()">검색하기</button>
   </div>
 
-  <!-- 고객 상세 및 이력 관리 -->
+  <div id="loading" class="loading">☁️ 구글 시트에서 데이터를 불러오는 중...</div>
+
   <div id="customerSection" style="display:none;">
-    <!-- 기본 정보 & 전화/문자 연결 -->
     <div class="card">
       <div class="card-title">고객 프로필</div>
       <div class="btn-group" style="margin-bottom: 12px;">
@@ -147,10 +112,9 @@
         <label>메모</label>
         <input type="text" id="custMemo" placeholder="특이사항 입력">
       </div>
-      <button class="btn" style="background-color:#64748b;" onclick="saveCustomerProfile()">프로필 저장</button>
+      <button class="btn" style="background-color:#64748b;" onclick="saveCustomerProfile()">프로필 저장 (공유 DB)</button>
     </div>
 
-    <!-- 이력 관리 (상담 / 통화 / 문자 탭) -->
     <div class="card">
       <div class="tab-header">
         <button class="tab-btn active" onclick="switchTab('consult')">상담기록</button>
@@ -158,10 +122,8 @@
         <button class="tab-btn" onclick="switchTab('sms')">문자이력</button>
       </div>
 
-      <!-- 1. 상담기록 탭 -->
       <div id="consultTab" class="tab-content">
         <div class="form-group">
-          <label>상담 구분</label>
           <select id="consultType">
             <option value="일반문의">일반문의</option>
             <option value="신규계약">신규계약</option>
@@ -175,10 +137,8 @@
         <div id="consultList"></div>
       </div>
 
-      <!-- 2. 통화이력 탭 -->
       <div id="callTab" class="tab-content" style="display:none;">
         <div class="form-group">
-          <label>통화 구분</label>
           <select id="callType">
             <option value="수신">📥 수신 (걸려온 전화)</option>
             <option value="발신">📤 발신 (걸은 전화)</option>
@@ -192,10 +152,8 @@
         <div id="callList"></div>
       </div>
 
-      <!-- 3. 문자이력 탭 -->
       <div id="smsTab" class="tab-content" style="display:none;">
         <div class="form-group">
-          <label>문자 구분</label>
           <select id="smsType">
             <option value="수신">📥 수신 (받은 문자)</option>
             <option value="발신">📤 발신 (보낸 문자)</option>
@@ -211,72 +169,66 @@
   </div>
 
   <script>
-    function getDB() {
-      const data = localStorage.getItem('SOLO_CRM_FULL_DB');
-      return data ? JSON.parse(data) : { customers: {}, histories: [] };
-    }
-    function saveDB(db) {
-      localStorage.setItem('SOLO_CRM_FULL_DB', JSON.stringify(db));
+    // ⚠️ 1단계에서 얻은 구글 Apps Script 웹 앱 배포 URL을 아래 큰따옴표 안에 넣어주세요.
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz110pZeIebOcZipaUE5yLJl_jQNzG5KqTizFY1oW3-LDDsmlQp6v_6EfvfA81Rf4jP2A/exec";
+
+    function showLoading(show) {
+      document.getElementById('loading').style.display = show ? 'block' : 'none';
     }
 
-    function searchCustomer() {
+    async function searchCustomer() {
       const phone = document.getElementById('searchPhone').value.replace(/[^0-9]/g, '');
       if(!phone) return alert('전화번호를 입력하세요.');
-      
-      document.getElementById('customerSection').style.display = 'block';
-      document.getElementById('custPhone').value = phone;
-      
-      const db = getDB();
-      const cust = db.customers[phone] || { name: '', memo: '' };
-      document.getElementById('custName').value = cust.name;
-      document.getElementById('custMemo').value = cust.memo;
-      
-      renderAllHistories(phone);
+      if(GAS_API_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+        return alert('HTML 코드 내 GAS_API_URL에 구글 앱스 스크립트 배포 주소를 설정해주세요.');
+      }
+
+      showLoading(true);
+      document.getElementById('customerSection').style.display = 'none';
+
+      try {
+        const response = await fetch(`${GAS_API_URL}?action=get&phone=${phone}`);
+        const data = await response.json();
+
+        document.getElementById('customerSection').style.display = 'block';
+        document.getElementById('custPhone').value = phone;
+        document.getElementById('custName').value = data.customer.name || '';
+        document.getElementById('custMemo').value = data.customer.memo || '';
+
+        renderHistories(data.histories);
+      } catch (err) {
+        alert('데이터를 불러오지 못했습니다: ' + err);
+      } finally {
+        showLoading(false);
+      }
     }
 
-    function saveCustomerProfile() {
+    async function saveCustomerProfile() {
       const phone = document.getElementById('custPhone').value;
       if(!phone) return;
-      const db = getDB();
-      db.customers[phone] = {
+
+      showLoading(true);
+      const payload = {
+        action: 'saveProfile',
+        phone: phone,
         name: document.getElementById('custName').value,
         memo: document.getElementById('custMemo').value
       };
-      saveDB(db);
-      alert('프로필이 저장되었습니다.');
-    }
 
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-      
-      if(tabName === 'consult') {
-        document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        document.getElementById('consultTab').style.display = 'block';
-      } else if(tabName === 'call') {
-        document.querySelectorAll('.tab-btn')[1].classList.add('active');
-        document.getElementById('callTab').style.display = 'block';
-      } else if(tabName === 'sms') {
-        document.querySelectorAll('.tab-btn')[2].classList.add('active');
-        document.getElementById('smsTab').style.display = 'block';
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        alert('구글 시트에 프로필이 저장되었습니다.');
+      } catch (err) {
+        alert('저장 실패: ' + err);
+      } finally {
+        showLoading(false);
       }
     }
 
-    function makeCall() {
-      const phone = document.getElementById('custPhone').value;
-      if(phone) {
-        window.location.href = `tel:${phone}`;
-      }
-    }
-
-    function sendSMS() {
-      const phone = document.getElementById('custPhone').value;
-      if(phone) {
-        window.location.href = `sms:${phone}`;
-      }
-    }
-
-    function addHistory(category) {
+    async function addHistory(category) {
       const phone = document.getElementById('custPhone').value;
       if(!phone) return;
 
@@ -294,29 +246,36 @@
 
       if(!content) return alert('내용을 입력하세요.');
 
-      const db = getDB();
+      showLoading(true);
       const now = new Date();
-      db.histories.unshift({
+      const payload = {
+        action: 'addHistory',
         phone: phone,
         category: category,
         subType: subType,
         content: content,
         date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      });
+      };
 
-      saveDB(db);
-      
-      if(category === 'consult') document.getElementById('consultContent').value = '';
-      if(category === 'call') document.getElementById('callMemo').value = '';
-      if(category === 'sms') document.getElementById('smsContent').value = '';
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
 
-      renderAllHistories(phone);
+        if(category === 'consult') document.getElementById('consultContent').value = '';
+        if(category === 'call') document.getElementById('callMemo').value = '';
+        if(category === 'sms') document.getElementById('smsContent').value = '';
+
+        searchCustomer();
+      } catch (err) {
+        alert('기록 추가 실패: ' + err);
+      } finally {
+        showLoading(false);
+      }
     }
 
-    function renderAllHistories(phone) {
-      const db = getDB();
-      const histories = db.histories.filter(h => h.phone === phone);
-
+    function renderHistories(histories) {
       const consultList = document.getElementById('consultList');
       const callList = document.getElementById('callList');
       const smsList = document.getElementById('smsList');
@@ -341,7 +300,32 @@
       });
     }
 
-    // URL 파라미터 처리 (?phone=01012345678)
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+      
+      if(tabName === 'consult') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('consultTab').style.display = 'block';
+      } else if(tabName === 'call') {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('callTab').style.display = 'block';
+      } else if(tabName === 'sms') {
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        document.getElementById('smsTab').style.display = 'block';
+      }
+    }
+
+    function makeCall() {
+      const phone = document.getElementById('custPhone').value;
+      if(phone) window.location.href = `tel:${phone}`;
+    }
+
+    function sendSMS() {
+      const phone = document.getElementById('custPhone').value;
+      if(phone) window.location.href = `sms:${phone}`;
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const phone = params.get('phone');
