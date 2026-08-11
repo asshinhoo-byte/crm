@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사업자등록정보 진위확인</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; max-width: 550px; margin: auto; background-color: #f8f9fa; }
+        .container { background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #333; text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 25px; padding: 18px; border-radius: 5px; display: none; line-height: 1.6; }
+        .success { background-color: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; }
+        .fail { background-color: #ffebee; border: 1px solid #ef9a9a; color: #c62828; }
+        .info-list { margin-top: 10px; padding-left: 0; list-style: none; font-size: 14px; color: #333; }
+        .info-list li { margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e0e0e0; }
+        .info-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>사업자 진위확인</h2>
+    
+    <div class="form-group">
+        <label for="bNo">사업자등록번호 (10자리)</label>
+        <input type="text" id="bNo" placeholder="숫자만 입력 (예: 1234567890)">
+    </div>
+    <div class="form-group">
+        <label for="pNm">대표자 성명</label>
+        <input type="text" id="pNm" placeholder="예: 홍길동">
+    </div>
+    <div class="form-group">
+        <label for="startDt">개업일자 (8자리)</label>
+        <input type="text" id="startDt" placeholder="예: 20200101">
+    </div>
+
+    <button onclick="verifyBusiness()">진위 확인하기</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    async function verifyBusiness() {
+        // 발급받으신 서비스키 자동 할당
+        const serviceKey = "ZD54vNZydRJ9LhD9Qftz5evoDJijRA4HpipJXAG35J12gjrXArHHzNrDKN1u5A8cvRENh3CJkQln1Tm4liImOA==";
+        
+        const bNo = document.getElementById('bNo').value.trim().replace(/-/g, '');
+        const pNm = document.getElementById('pNm').value.trim();
+        const startDt = document.getElementById('startDt').value.trim().replace(/-/g, '');
+        const resultDiv = document.getElementById('result');
+
+        if (!bNo || !pNm || !startDt) {
+            alert('모든 항목을 입력해 주세요.');
+            return;
+        }
+
+        const url = `https://api.odcloud.kr/api/nts-businessman/v1/validate?serviceKey=${encodeURIComponent(serviceKey)}`;
+        
+        const payload = {
+            "businesses": [
+                {
+                    "b_no": bNo,
+                    "start_dt": startDt,
+                    "p_nm": pNm
+                }
+            ]
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            resultDiv.style.display = 'block';
+
+            if (data.data && data.data.length > 0) {
+                const item = data.data[0];
+
+                if (item.valid === "01") {
+                    const stt = item.status || {};
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong style="font-size: 16px;">[확인 완료] 사업자 정보가 일치합니다.</strong>
+                        <ul class="info-list">
+                            <li><b>사업자 상태:</b> ${stt.b_stt || '-'}</li>
+                            <li><b>과세 유형:</b> ${stt.tax_type || '-'}</li>
+                            <li><b>단위과세 전환 여부:</b> ${stt.utcc_yn || '-'}</li>
+                            <li><b>과세유형 전환일자:</b> ${stt.tax_type_change_dt || '-'}</li>
+                            <li><b>세금계산서 적용일자:</b> ${stt.invoice_apply_dt || '-'}</li>
+                            <li><b>폐업 일자:</b> ${stt.end_dt || '-'}</li>
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.className = 'fail';
+                    resultDiv.innerHTML = `
+                        <strong>[확인 실패]</strong> ${item.valid_msg || '입력하신 정보가 국세청 데이터와 일치하지 않습니다.'}
+                    `;
+                }
+            } else {
+                resultDiv.className = 'fail';
+                resultDiv.innerHTML = `<strong>오류:</strong> ${data.message || '요청 처리에 실패했습니다.'}`;
+            }
+        } catch (error) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'fail';
+            resultDiv.innerHTML = `<strong>통신 오류:</strong> ${error.message}`;
+        }
+    }
+</script>
+
+</body>
+</html>
