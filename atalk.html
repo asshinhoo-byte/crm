@@ -151,32 +151,41 @@
   }
 })();
 
-// 1. 위젯 초기화
+// 위젯 초기화
 Livechat("boot", {
   pluginKey: "WBT_4bc96c35455f459e867218d22df66763"
 });
 
-// 2. #chat URL 확인 및 채팅창 자동 오픈 로직
-(function checkAndOpenChat() {
+// URL에 #chat이 포함된 경우 자동 오픈 로직
+function forceOpenLivechat() {
   if (window.location.hash === "#chat") {
-    // SDK 준비 완료 시점에 실행
-    Livechat("onReady", function() {
+    // 1. SDK open 함수 실행 시도
+    if (typeof Livechat === "function") {
       Livechat("open");
-    });
+    }
 
-    // 준비 완료 이벤트 지연 대비 0.5초 간격 재시도
-    var attempts = 0;
+    // 2. 우측 하단 렌더링된 버튼 요소를 직접 클릭하는 백업 처리
+    var count = 0;
     var timer = setInterval(function() {
-      attempts++;
-      if (typeof Livechat === "function") {
-        Livechat("open");
+      count++;
+      
+      // 아톡비즈버튼 및 iframe 감지
+      var targetBtn = document.querySelector('iframe[id*="atalk"], iframe[id*="livechat"], [class*="atalk"], [class*="livechat"]');
+      
+      if (targetBtn) {
+        targetBtn.click();
       }
-      if (attempts >= 10) { // 5초 후 중단
+
+      if (count >= 10) {
         clearInterval(timer);
       }
     }, 500);
   }
-})();
+}
+
+// DOM 생성 및 페이지 로드 완료 시점에 실행
+window.addEventListener("DOMContentLoaded", forceOpenLivechat);
+window.addEventListener("load", forceOpenLivechat);
 </script>
     
 </body>
