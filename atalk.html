@@ -151,26 +151,33 @@
   }
 })();
 
-// 1. 기본 위젯 로드
+// 1. 위젯 초기화
 Livechat("boot", {
   pluginKey: "WBT_4bc96c35455f459e867218d22df66763"
 });
 
-// 2. URL 끝에 #chat 이 포함되어 접속했는지 확인 후 자동 오픈
-window.addEventListener("load", function() {
+// 2. #chat URL 확인 및 채팅창 자동 오픈 로직
+(function checkAndOpenChat() {
   if (window.location.hash === "#chat") {
-    // 위젯 초기화 후 열기 명령 실행
-    Livechat("open");
-    
-    // SDK 로딩 타이밍 이슈 대비 (버튼 직접 클릭 백업 처리)
-    setTimeout(function() {
-      var btn = document.querySelector('[class*="livechat"], [class*="atalk"]');
-      if (btn) btn.click();
-    }, 1000);
-  }
-});
-</script>
+    // SDK 준비 완료 시점에 실행
+    Livechat("onReady", function() {
+      Livechat("open");
+    });
 
+    // 준비 완료 이벤트 지연 대비 0.5초 간격 재시도
+    var attempts = 0;
+    var timer = setInterval(function() {
+      attempts++;
+      if (typeof Livechat === "function") {
+        Livechat("open");
+      }
+      if (attempts >= 10) { // 5초 후 중단
+        clearInterval(timer);
+      }
+    }, 500);
+  }
+})();
+</script>
     
 </body>
 </html>
