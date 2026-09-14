@@ -151,32 +151,32 @@
   }
 })();
 
-// 위젯 초기화
+// 위젯 기본 실행
 Livechat("boot", {
   pluginKey: "WBT_4bc96c35455f459e867218d22df66763"
 });
 
-// #chat 접속 시 버튼 클릭 로직
-window.addEventListener("load", function() {
+// URL 끝에 #chat 이 붙어있을 때 버튼 자동 클릭
+(function openLivechatOnHash() {
   if (window.location.hash === "#chat") {
-    var count = 0;
+    var attempts = 0;
     var timer = setInterval(function() {
-      count++;
+      attempts++;
       
-      // 화면 우측 하단의 아톡비즈 채팅 버튼/아이콘 탐색 후 클릭
-      var chatBtn = document.querySelector('button[class*="atalk"], div[class*="atalk"], iframe[id*="atalk"], [class*="livechat-button"]');
+      // 찾으신 아톡비즈 버튼 클래스(.livechat-widget-bubble) 탐색
+      var bubbleBtn = document.querySelector('.livechat-widget-bubble');
       
-      if (chatBtn) {
-        chatBtn.click();
-        clearInterval(timer); // 찾았으면 반복 종료
+      if (bubbleBtn) {
+        bubbleBtn.click();
+        clearInterval(timer); // 클릭 성공 시 반복 중단
       }
-
-      if (count >= 20) { // 최대 10초간 시도 후 종료
+      
+      if (attempts >= 30) { // 최대 9초 동안 렌더링 대기 후 중단
         clearInterval(timer);
       }
-    }, 500);
+    }, 300);
   }
-});
+})();
 </script>
     
 </body>
