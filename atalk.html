@@ -119,7 +119,57 @@
     }
 </script>
 
-<script>(function(){var w=window;if(w.LivechatIO){return w.console.error("LivechatIO script included twice.");}var lc=function(){lc.c(arguments);};lc.q=[];lc.c=function(args){lc.q.push(args);};w.Livechat=lc;w.LivechatIO=lc;function l(){if(w.LivechatInitialized){return;}w.LivechatInitialized=true;var s=document.createElement("script");s.type="text/javascript";s.async=true;s.src="https://cdn.atalkbizplus.co.kr/lib/sdk.global.js";var x=document.getElementsByTagName("script")[0];if(x&&x.parentNode){x.parentNode.insertBefore(s,x);}else{document.head.appendChild(s);}}if(document.readyState==="complete"){l();}else{w.addEventListener("DOMContentLoaded",l);w.addEventListener("load",l);}})();Livechat("boot",{pluginKey:"WBT_4bc96c35455f459e867218d22df66763"});</script>
+<script>
+(function(){
+  var w=window;
+  if(w.LivechatIO){return w.console.error("LivechatIO script included twice.");}
+  var lc=function(){lc.c(arguments);};
+  lc.q=[];
+  lc.c=function(args){lc.q.push(args);};
+  w.Livechat=lc;
+  w.LivechatIO=lc;
+  
+  function l(){
+    if(w.LivechatInitialized){return;}
+    w.LivechatInitialized=true;
+    var s=document.createElement("script");
+    s.type="text/javascript";
+    s.async=true;
+    s.src="https://cdn.atalkbizplus.co.kr/lib/sdk.global.js";
+    var x=document.getElementsByTagName("script")[0];
+    if(x&&x.parentNode){
+      x.parentNode.insertBefore(s,x);
+    }else{
+      document.head.appendChild(s);
+    }
+  }
+  
+  if(document.readyState==="complete"){l();}
+  else{
+    w.addEventListener("DOMContentLoaded",l);
+    w.addEventListener("load",l);
+  }
+})();
+
+// 1. 기본 위젯 로드
+Livechat("boot", {
+  pluginKey: "WBT_4bc96c35455f459e867218d22df66763"
+});
+
+// 2. URL 끝에 #chat 이 포함되어 접속했는지 확인 후 자동 오픈
+window.addEventListener("load", function() {
+  if (window.location.hash === "#chat") {
+    // 위젯 초기화 후 열기 명령 실행
+    Livechat("open");
+    
+    // SDK 로딩 타이밍 이슈 대비 (버튼 직접 클릭 백업 처리)
+    setTimeout(function() {
+      var btn = document.querySelector('[class*="livechat"], [class*="atalk"]');
+      if (btn) btn.click();
+    }, 1000);
+  }
+});
+</script>
 
     
 </body>
